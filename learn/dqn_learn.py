@@ -12,7 +12,7 @@ GAMMA = 0.9                 # reward discount
 TARGET_REPLACE_ITER = 100   # target update frequency
 MEMORY_CAPACITY = 30
 N_ACTIONS = 7
-N_STATES = 415233
+N_STATES = 316368
 
 class DQN(object):
     def __init__(self):
@@ -27,6 +27,7 @@ class DQN(object):
         # input only one sample
         if np.random.uniform() < EPSILON:   # greedy
             actions_value = self.eval_net.forward(x)
+            # print("actions_value", actions_value)
             action = torch.max(actions_value, 1)[1].data.numpy()
         else:   # random
             action = np.random.randint(0, N_ACTIONS-1)

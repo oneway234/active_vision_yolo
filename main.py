@@ -8,7 +8,7 @@ import torch
 from yolov3 import extract_feature
 
 
-MEMORY_CAPACITY = 1
+MEMORY_CAPACITY = 10
 def run_acd():
     dqn = DQN()
 
@@ -22,7 +22,7 @@ def run_acd():
             # read curr image
             inimg = os.path.join(train_set, 'jpg_rgb', img)
             curr_s = extract_feature.extract_img_feature(inimg)
-
+            # print("curr_s", curr_s.size())
             # choose action
             action = dqn.choose_action(curr_s)
 
@@ -41,15 +41,15 @@ def run_acd():
             # print("counter:", dqn.memory_counter)
             # print('next_diff:', next_diff, 'steps', steps)
             if dqn.memory_counter > MEMORY_CAPACITY:
-                print("start learning...")
+                # print("start learning...")
                 dqn.learn()  # 记忆库满了就进行学习
 
             if stopping_criterion(next_diff, steps):
                 print("stop")
                 break
             print("steps =", steps)
-            print("action:", action, "curr_s:", inimg, "next_img:", inextimg)
-            print("Cur_diff:", diff, "Nxet_diff:", next_diff, "Reward:", reward)
+            print("action:", action)
+            print("Reward:", reward)
             steps += 1
             img = next_img
             diff = next_diff

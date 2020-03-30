@@ -53,8 +53,6 @@ def extract_img_feature(img_name):
     input_imgs = Variable(input_imgs.type(Tensor))
     with torch.no_grad():
         x, detections = model(input_imgs)
-        x = detections
-            # x = torch.unsqueeze(torch.FloatTensor(detections), 0)
         detections = non_max_suppression(detections, opt.conf_thres, opt.nms_thres)
     return x.cpu()
 
