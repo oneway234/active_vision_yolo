@@ -129,7 +129,7 @@ class Active_vision_env():
                     cur_diff = next_diff
                     reward = -1
                 elif next_diff == cur_diff != -1 != 6: # No change
-                    reward = 0
+                    reward = -0.5
 
             elif next_image_name == curr_img:
                 if cur_diff == 6:
@@ -137,7 +137,7 @@ class Active_vision_env():
                 elif cur_diff == 1:
                     reward = 1
                 else:
-                    reward = 0
+                    reward = -0.5
 
             curr_img = next_image_name
 

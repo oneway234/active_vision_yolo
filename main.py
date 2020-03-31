@@ -8,11 +8,15 @@ import torch
 from yolov3 import extract_feature
 
 
-MEMORY_CAPACITY = 10
+MEMORY_CAPACITY = 100
+os.makedirs("train_record", exist_ok=True)
+
 def run_acd():
     dqn = DQN()
 
-    for episode in range(1):
+    for episode in range(100):
+        action_list = []
+        reward_list = []
         # initial observation
         print("episode:", episode, "initial observation....")
         steps = 0
@@ -37,6 +41,9 @@ def run_acd():
             r = reward
             a = action
 
+            action_list.append(str(action))
+            reward_list.append(str(reward))
+
             dqn.store_transition(s, a, r, s_)
             # print("counter:", dqn.memory_counter)
             # print('next_diff:', next_diff, 'steps', steps)
@@ -45,20 +52,28 @@ def run_acd():
                 dqn.learn()  # 记忆库满了就进行学习
 
             if stopping_criterion(next_diff, steps):
+                filename = os.path.join("train_record", str(episode)+'.txt')
+                with open(filename, 'w') as f:
+                    for i in range(len(action_list)):
+                        f.write(action_list[i])
+                        f.write(reward_list[i]+"\n")
+                    f.close()
                 print("stop")
                 break
-            print("steps =", steps)
-            print("action:", action)
+            if steps%10 == 0:
+                print("steps =", steps)
+            print("action:", action, "cur:", os.path.basename(inimg), diff,
+                  "next:", os.path.basename(inextimg), next_diff)
             print("Reward:", reward)
             steps += 1
             img = next_img
             diff = next_diff
     print("save the net")
-    # torch.save(dqn, 'dqn.pkl')
+    torch.save(dqn, 'dqn.pkl')
 
 
 def stopping_criterion(next_diff, steps):
-    if next_diff == 1 or steps >= MEMORY_CAPACITY + 10:
+    if next_diff == 1 or steps >= MEMORY_CAPACITY + 100:
         return True
 
 
