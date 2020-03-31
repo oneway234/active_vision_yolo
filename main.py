@@ -81,8 +81,8 @@ def run_acd():
                     break
 
             if steps%100 == 0:
-                print("steps =", steps)
-            print("action:", action, "Reward:", reward, diff, " -->", next_diff, "cur:", os.path.basename(inimg),
+                print("---------------------steps:", steps, "-----------------------")
+            print("steps =", steps, "action:", action, "Reward:", reward, diff, " -->", next_diff, "cur:", os.path.basename(inimg),
                   "next:", os.path.basename(inextimg))
             steps += 1
             img = next_img

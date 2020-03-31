@@ -131,7 +131,19 @@ class Active_vision_env():
                     reward = 1
                 cur_diff = next_diff
                 curr_bbox = next_bbox
-
+            else:
+                if cur_diff == -1:  # Nothing in img
+                    reward = -1
+                elif cur_diff == 5:
+                    reward = 0
+                elif cur_diff == 4:
+                    reward = 0.25
+                elif cur_diff == 3:
+                    reward = 0.5
+                elif cur_diff == 2:
+                    reward = 0.75
+                elif cur_diff == 1:
+                    reward = 1
             curr_img = next_image_name
 
         elif next_image_name == '':
