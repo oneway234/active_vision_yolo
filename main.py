@@ -6,11 +6,13 @@ import cv2
 import numpy as np
 import torch
 from yolov3 import extract_feature
+import matplotlib.pyplot as plt
 
 
-MEMORY_CAPACITY = 10000
-MAXIMUN_STEPS = 100
-TRAIN_TIMES = 1000
+MEMORY_CAPACITY = 15
+MAXIMUN_STEPS = 10
+TRAIN_TIMES = 3
+RAMDOM_EXPLORE_TIMES = 5
 
 os.makedirs("train_record", exist_ok=True)
 
@@ -20,6 +22,7 @@ def run_acd():
     for episode in range(TRAIN_TIMES):
         action_list = []
         reward_list = []
+        loss = []
         # initial observation
         print("episode:", episode, "initial observation....")
         steps = 0
@@ -34,7 +37,7 @@ def run_acd():
             curr_s = curr_s.reshape(1, 8112*39)
             curr_s = torch.cat([curr_s, curr_bbox], 1) #combine feature and bbox
             # choose action
-            if dqn.memory_counter <= MEMORY_CAPACITY:
+            if dqn.memory_counter <= RAMDOM_EXPLORE_TIMES:
                 action = random.randint(0, 6)
             else:
                 action = dqn.choose_action(curr_s)
@@ -65,8 +68,9 @@ def run_acd():
             # print("counter:", dqn.memory_counter)
             # print('next_diff:', next_diff, 'steps', steps)
             if dqn.memory_counter > MEMORY_CAPACITY:
-                print("---------------------Learning-------------------------")
-                dqn.learn()  # 记忆库满了就进行学习
+                # print("---------------------Learning-------------------------")
+                loss.append(dqn.learn().detach().numpy())  # 记忆库满了就进行学习
+
 
             if dqn.memory_counter >= MEMORY_CAPACITY+1: #中止驗證
                 if stopping_criterion(next_diff, steps):
@@ -77,19 +81,26 @@ def run_acd():
                             f.write(", ")
                             f.write(reward_list[i] + "\n")
                         f.close()
+
+                    print(loss)
+                    plt.plot(loss)
+                    plt.ylabel('Loss')
+                    plt.xlabel('Times')
+                    img_name = os.path.join("train_record", str(episode) + '.png')
+                    plt.savefig(img_name)
                     print("stop")
                     break
 
             if steps%100 == 0:
                 print("---------------------steps:", steps, "-----------------------")
-            print("steps =", steps, "action:", action, "Reward:", reward, diff, " -->", next_diff, "cur:", os.path.basename(inimg),
+            print("steps =", steps, "action:", action, "Reward:", reward, "next_diff:", next_diff, "cur:", os.path.basename(inimg),
                   "next:", os.path.basename(inextimg))
             steps += 1
             img = next_img
             curr_bbox = next_bbox
             diff = next_diff
     print("save the net")
-    torch.save(dqn, 'dqn331.pkl')
+    torch.save(dqn, 'dqn.pkl')
 
 
 def stopping_criterion(next_diff, steps):
@@ -102,4 +113,3 @@ if __name__ == '__main__':
     cuda_gpu = torch.cuda.is_available()
     if (cuda_gpu):
         run_acd()
-
