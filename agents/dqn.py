@@ -12,7 +12,7 @@ class DQN(nn.Module):
             num_actions: number of action-value to output, one-to-one correspondence to action in game.
         """
         super(DQN, self).__init__()
-        self.fc1 = nn.Linear(316368, 512)
+        self.fc1 = nn.Linear(316372, 512)
         self.fc2 = nn.Linear(512, num_actions)
 
     def forward(self, x):

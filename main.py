@@ -8,7 +8,7 @@ import torch
 from yolov3 import extract_feature
 
 
-MEMORY_CAPACITY = 100
+MEMORY_CAPACITY = 3000
 os.makedirs("train_record", exist_ok=True)
 
 def run_acd():
@@ -21,20 +21,34 @@ def run_acd():
         print("episode:", episode, "initial observation....")
         steps = 0
         train_set, img, thing_label, diff, curr_bbox = env.reset(episode) # observation:
+        curr_bbox = list(map(float, curr_bbox))               #turn to tensor
+        curr_bbox = torch.FloatTensor(curr_bbox).unsqueeze(0)
         while True:
             # RL choose action based on observation
             # read curr image
             inimg = os.path.join(train_set, 'jpg_rgb', img)
             curr_s = extract_feature.extract_img_feature(inimg)
-            # print("curr_s", curr_s.size())
+            curr_s = curr_s.reshape(1, 8112*39)
+            curr_s = torch.cat([curr_s, curr_bbox], 1) #combine feature and bbox
             # choose action
-            action = dqn.choose_action(curr_s)
-
+            if steps <= MEMORY_CAPACITY:
+                action = random.randint(0, 6)
+            else:
+                action = dqn.choose_action(curr_s)
+                if type(action) is np.ndarray:
+                    action = action[0]
             # RL take action and get next observation and reward
-            reward, next_img, next_diff, next_bbox = env.step(train_set, img, thing_label, diff, action)
+            reward, next_img, next_diff, next_bbox = env.step(train_set, img, thing_label, diff, action, curr_bbox)
+            if type(next_bbox) is not torch.Tensor:
+                next_bbox = list(map(float, next_bbox))  # turn to tensor
+                next_bbox = torch.FloatTensor(next_bbox).unsqueeze(0)  # turn to tensor
+
+
             # read next image
             inextimg = os.path.join(train_set, 'jpg_rgb', next_img)  # read next img
             next_s = extract_feature.extract_img_feature(inextimg)
+            next_s = next_s.reshape(1, 8112 * 39)
+            next_s = torch.cat([next_s, next_bbox], 1)
 
             s = curr_s
             s_ = next_s
@@ -48,28 +62,30 @@ def run_acd():
             # print("counter:", dqn.memory_counter)
             # print('next_diff:', next_diff, 'steps', steps)
             if dqn.memory_counter > MEMORY_CAPACITY:
-                # print("start learning...")
                 dqn.learn()  # 记忆库满了就进行学习
 
-            if stopping_criterion(next_diff, steps):
-                filename = os.path.join("train_record", str(episode)+'.txt')
-                with open(filename, 'w') as f:
-                    for i in range(len(action_list)):
-                        f.write(action_list[i])
-                        f.write(reward_list[i]+"\n")
-                    f.close()
-                print("stop")
-                break
-            if steps%10 == 0:
+            if steps >= MEMORY_CAPACITY+1: #中止驗證
+                if stopping_criterion(next_diff, steps):
+                    filename = os.path.join("train_record", str(episode) + '.txt')
+                    with open(filename, 'w') as f:
+                        for i in range(len(action_list)):
+                            f.write(action_list[i])
+                            f.write(", ")
+                            f.write(reward_list[i] + "\n")
+                        f.close()
+                    print("stop")
+                    break
+
+            if steps%100 == 0:
                 print("steps =", steps)
-            print("action:", action, "cur:", os.path.basename(inimg), diff,
-                  "next:", os.path.basename(inextimg), next_diff)
-            print("Reward:", reward)
+            # print("action:", action, "cur:", os.path.basename(inimg), diff,
+            #       "next:", os.path.basename(inextimg), next_diff,"Reward:", reward)
             steps += 1
             img = next_img
+            curr_bbox = next_bbox
             diff = next_diff
     print("save the net")
-    torch.save(dqn, 'dqn.pkl')
+    torch.save(dqn, 'dqn331.pkl')
 
 
 def stopping_criterion(next_diff, steps):
@@ -82,3 +98,4 @@ if __name__ == '__main__':
     cuda_gpu = torch.cuda.is_available()
     if (cuda_gpu):
         run_acd()
+

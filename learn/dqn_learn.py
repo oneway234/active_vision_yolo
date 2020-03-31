@@ -12,7 +12,7 @@ GAMMA = 0.9                 # reward discount
 TARGET_REPLACE_ITER = 100   # target update frequency
 MEMORY_CAPACITY = 30
 N_ACTIONS = 7
-N_STATES = 316368
+N_STATES = 316372
 
 class DQN(object):
     def __init__(self):
@@ -39,6 +39,7 @@ class DQN(object):
         s = s.ravel()
         s_ = s_.ravel()
         ar = np.append(a, r)
+        # print("s:", s, "s_:", s_, ar)
         transition = np.hstack((s, ar, s_))
         # print(transition.shape)
         # replace the old memory with new memory

@@ -9,7 +9,7 @@ class Active_vision_env():
         self.action_space = [0, 1, 2, 3, 4, 5, 6]
         self.n_actions = len(self.action_space)
         self.n_feature = 'image w*h'
-        self.path = "/home/wei/active vision/active_vistion_RL/dataset"
+        self.path = "dataset"
 
     def reset(self, num): #get initial state
         """
@@ -78,12 +78,13 @@ class Active_vision_env():
             thing_label = int(bbox[-2])
             diff = int(bbox[-1])
             bbox = bbox[0:4]
+            if bbox is True:
+                bbox = [0, 0, 0, 0]
         return train_set, img, thing_label, diff, bbox
 
-    def step(self, train_set, curr_img, thing_label, diff, action):
+    def step(self, train_set, curr_img, thing_label, diff, action, curr_bbox):
 
         # set up curr_img and json paths
-        images_path = os.path.join(train_set, 'jpg_rgb', curr_img)
         annotations_path = os.path.join(train_set, 'annotations.json')
 
         # load json data
@@ -91,7 +92,6 @@ class Active_vision_env():
         annotations = json.load(ann_file)
 
         # set up for first image
-        cur_image_name = images_path
         next_image_name = ''
 
         if action:
@@ -112,44 +112,44 @@ class Active_vision_env():
             elif action == 6:
                 next_image_name = curr_img
         reward = 0
-        next_bbox = []
         cur_diff = diff
         if next_image_name != '':
             if next_image_name != curr_img:
                 next_diff, next_bbox = Active_vision_env.bbox_diff(self, train_set
                                                          , next_image_name, thing_label)
-
                 if next_diff == -1: # Nothing in img
-                    cur_diff = 6
                     reward = -1
-                elif next_diff < cur_diff != -1: # Get better
-                    cur_diff = next_diff
+                elif next_diff == 5:
+                    reward = 0
+                elif next_diff == 4:
+                    reward = 0.25
+                elif next_diff == 3:
+                    reward = 0.5
+                elif next_diff == 2:
+                    reward = 0.75
+                elif next_diff == 1:
                     reward = 1
-                elif next_diff > cur_diff != -1: # Worse
-                    cur_diff = next_diff
-                    reward = -1
-                elif next_diff == cur_diff != -1 != 6: # No change
-                    reward = -0.5
-
-            elif next_image_name == curr_img:
-                if cur_diff == 6:
-                    reward = -1
-                elif cur_diff == 1:
-                    reward = 1
-                else:
-                    reward = -0.5
+                cur_diff = next_diff
+                curr_bbox = next_bbox
 
             curr_img = next_image_name
 
         elif next_image_name == '':
-            if cur_diff == 6:
+            if cur_diff == -1:  # Nothing in img
                 reward = -1
+            elif cur_diff == 5:
+                reward = 0
+            elif cur_diff == 4:
+                reward = 0.25
+            elif cur_diff == 3:
+                reward = 0.5
+            elif cur_diff == 2:
+                reward = 0.75
             elif cur_diff == 1:
                 reward = 1
-            else:
-                reward = 0
 
-        return reward, curr_img, cur_diff, next_bbox
+
+        return reward, curr_img, cur_diff, curr_bbox
 
     def bbox_diff(self, train_set, img, thing_label):
         # set up curr_img and json paths
@@ -171,10 +171,10 @@ class Active_vision_env():
                     break
             if diff == 0:
                 diff = -1
-                bbox = [0, 0, 0, 0]
+                bbox = [0., 0., 0., 0.]
         else:
             diff = -1#
-            bbox = [0, 0, 0, 0]
+            bbox = [0., 0., 0., 0.]
         return diff, bbox
 
     def select_a_room(self, num): # each epison select a new room
@@ -208,6 +208,34 @@ class Active_vision_env():
 
 
 if __name__ == '__main__':
-    print(random.randint(0, 7))
+   print("a")
 
 
+
+
+
+
+
+
+   #old reward
+   # elif next_diff < cur_diff != -1: # Get better
+                #     cur_diff = next_diff
+                #     reward = 1
+                # elif next_diff > cur_diff != -1: # Worse
+                #     cur_diff = next_diff
+                #     reward = -1
+                # elif next_diff == cur_diff != -1 != 6: # No change
+                #     reward = -0.5
+            # elif next_image_name == curr_img:
+            #     if cur_diff == 6:
+            #         reward = -1
+            #     elif cur_diff == 1:
+            #         reward = 1
+            #     else:
+            #         reward = -0.5
+    #     if cur_diff == 6:
+        #         reward = -1
+        #     elif cur_diff == 1:
+        #         reward = 1
+        #     else:
+        #         reward = -0.5
