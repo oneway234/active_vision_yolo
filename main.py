@@ -8,13 +8,16 @@ import torch
 from yolov3 import extract_feature
 
 
-MEMORY_CAPACITY = 3000
+MEMORY_CAPACITY = 10000
+MAXIMUN_STEPS = 100
+TRAIN_TIMES = 1000
+
 os.makedirs("train_record", exist_ok=True)
 
 def run_acd():
     dqn = DQN()
 
-    for episode in range(100):
+    for episode in range(TRAIN_TIMES):
         action_list = []
         reward_list = []
         # initial observation
@@ -31,7 +34,7 @@ def run_acd():
             curr_s = curr_s.reshape(1, 8112*39)
             curr_s = torch.cat([curr_s, curr_bbox], 1) #combine feature and bbox
             # choose action
-            if steps <= MEMORY_CAPACITY:
+            if dqn.memory_counter <= MEMORY_CAPACITY:
                 action = random.randint(0, 6)
             else:
                 action = dqn.choose_action(curr_s)
@@ -62,9 +65,10 @@ def run_acd():
             # print("counter:", dqn.memory_counter)
             # print('next_diff:', next_diff, 'steps', steps)
             if dqn.memory_counter > MEMORY_CAPACITY:
+                print("---------------------Learning-------------------------")
                 dqn.learn()  # 记忆库满了就进行学习
 
-            if steps >= MEMORY_CAPACITY+1: #中止驗證
+            if dqn.memory_counter >= MEMORY_CAPACITY+1: #中止驗證
                 if stopping_criterion(next_diff, steps):
                     filename = os.path.join("train_record", str(episode) + '.txt')
                     with open(filename, 'w') as f:
@@ -78,8 +82,8 @@ def run_acd():
 
             if steps%100 == 0:
                 print("steps =", steps)
-            # print("action:", action, "cur:", os.path.basename(inimg), diff,
-            #       "next:", os.path.basename(inextimg), next_diff,"Reward:", reward)
+            print("action:", action, "Reward:", reward, diff, " -->", next_diff, "cur:", os.path.basename(inimg),
+                  "next:", os.path.basename(inextimg))
             steps += 1
             img = next_img
             curr_bbox = next_bbox
@@ -89,7 +93,7 @@ def run_acd():
 
 
 def stopping_criterion(next_diff, steps):
-    if next_diff == 1 or steps >= MEMORY_CAPACITY + 100:
+    if next_diff == 1 or steps >= MAXIMUN_STEPS:
         return True
 
 
