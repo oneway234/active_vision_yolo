@@ -35,6 +35,7 @@ def run_acd():
             inimg = os.path.join(train_set, 'jpg_rgb', img)
             curr_s = extract_feature.extract_img_feature(inimg)
             curr_s = curr_s.reshape(1, 8112*39)
+            curr_s = dqn.decrease_net(curr_s)
             curr_s = torch.cat([curr_s, curr_bbox], 1) #combine feature and bbox
             # choose action
             if dqn.memory_counter <= RAMDOM_EXPLORE_TIMES:
@@ -43,6 +44,10 @@ def run_acd():
                 action = dqn.choose_action(curr_s)
                 if type(action) is np.ndarray:
                     action = action[0]
+            # action = dqn.choose_action(curr_s) # action value check
+            # if type(action) is np.ndarray:
+            #     action = action[0]
+
             # RL take action and get next observation and reward
             reward, next_img, next_diff, next_bbox = env.step(train_set, img, thing_label, diff, action, curr_bbox)
             if type(next_bbox) is not torch.Tensor:
@@ -54,6 +59,7 @@ def run_acd():
             inextimg = os.path.join(train_set, 'jpg_rgb', next_img)  # read next img
             next_s = extract_feature.extract_img_feature(inextimg)
             next_s = next_s.reshape(1, 8112 * 39)
+            next_s = dqn.decrease_net(next_s)
             next_s = torch.cat([next_s, next_bbox], 1)
 
             s = curr_s
@@ -82,19 +88,18 @@ def run_acd():
                             f.write(reward_list[i] + "\n")
                         f.close()
 
-                    print(loss)
-                    plt.plot(loss)
-                    plt.ylabel('Loss')
-                    plt.xlabel('Times')
-                    img_name = os.path.join("train_record", str(episode) + '.png')
-                    plt.savefig(img_name)
-                    print("stop")
+                    # print(loss)
+                    # plt.plot(loss)
+                    # plt.ylabel('Loss')
+                    # plt.xlabel('Times')
+                    # img_name = os.path.join("train_record", str(episode) + '.png')
+                    # plt.savefig(img_name)
+                    # print("stop")
                     break
 
             if steps%100 == 0:
                 print("---------------------steps:", steps, "-----------------------")
-            print("steps =", steps, "action:", action, "Reward:", reward, "next_diff:", next_diff, "cur:", os.path.basename(inimg),
-                  "next:", os.path.basename(inextimg))
+            print("steps =", steps, "action:", action, "Reward:", reward, "next_diff:", next_diff)
             steps += 1
             img = next_img
             curr_bbox = next_bbox

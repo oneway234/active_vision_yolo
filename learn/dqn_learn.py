@@ -1,22 +1,24 @@
 import torch
 import torch.nn as nn
 import agents.dqn as net
+import agents.img_cnn as img_net
 import  numpy as np
 import agents.img_cnn as fnet
 
 # Hyper Parameters
-BATCH_SIZE = 1
+BATCH_SIZE = 8
 LR = 0.01                   # learning rate
 EPSILON = 0.9               # greedy policy
 GAMMA = 0.9                 # reward discount
 TARGET_REPLACE_ITER = 100   # target update frequency
 MEMORY_CAPACITY = 30
 N_ACTIONS = 7
-N_STATES = 316372
+N_STATES = 516
 
 class DQN(object):
     def __init__(self):
         self.eval_net, self.target_net = net.DQN(), net.DQN()
+        self.decrease_net = img_net.FC()
         self.learn_step_counter = 0                                     # for target updating
         self.memory_counter = 0                                         # for storing memory
         self.memory = np.zeros((MEMORY_CAPACITY, N_STATES * 2 + 2))     # initialize memory
@@ -27,7 +29,7 @@ class DQN(object):
         # input only one sample
         if np.random.uniform() < EPSILON:   # greedy
             actions_value = self.eval_net.forward(x)
-            # print("actions_value", actions_value)
+            print("actions_value:", actions_value)
             action = torch.max(actions_value, 1)[1].data.numpy()
         else:   # random
             action = np.random.randint(0, N_ACTIONS-1)
@@ -46,6 +48,10 @@ class DQN(object):
         index = self.memory_counter % MEMORY_CAPACITY
         self.memory[index, :] = transition
         self.memory_counter += 1
+
+    def decrease(self, x):
+        feature_vector = self.decrease_net.forward(x)
+        return feature_vector
 
     def learn(self):
         # target parameter update
@@ -69,7 +75,7 @@ class DQN(object):
         q_next = self.target_net(b_s_).detach()     # detach from graph, don't backpropagate
         q_target = b_r + GAMMA * q_next.max(1)[0].view(BATCH_SIZE, 1)   # shape (batch, 1)
         loss = self.loss_func(q_eval, q_target)
-
+        print("b_s:", b_s, "\nb_s_:", b_s_, "\nloss:", loss)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()

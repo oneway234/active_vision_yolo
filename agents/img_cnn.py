@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-class CNN(nn.Module):
+class FC(nn.Module):
     def __init__(self, in_channels=3):
         """
         Initialize a deep Q-learning network as described in
@@ -11,15 +11,11 @@ class CNN(nn.Module):
                 i.e The number of most recent frames stacked together as describe in the paper
             num_actions: number of action-value to output, one-to-one correspondence to action in game.
         """
-        super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
-        self.fc4 = nn.Linear(1978624, 512)
+        super(FC, self).__init__()
+        self.bn1 = nn.BatchNorm1d(8112*39, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        self.fc2 = nn.Linear(8112*39, 512)
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = F.relu(self.fc4(x.view(x.size(0), -1)))
+        x = self.bn1(x)
+        x = F.relu(self.fc2(x.view(x.size(0), -1)))
         return x
