@@ -11,9 +11,9 @@ class FC(nn.Module):
                 i.e The number of most recent frames stacked together as describe in the paper
             num_actions: number of action-value to output, one-to-one correspondence to action in game.
         """
-        super(FC, self).__init__()
-        self.bn1 = nn.BatchNorm1d(8112*39, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-        self.fc2 = nn.Linear(8112*39, 512)
+        super(FC, self).__init__()#把皈依化弄好
+        self.bn1 = nn.BatchNorm1d(8112*89, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        self.fc2 = nn.Linear(8112*89, 512)
 
     def forward(self, x):
         x = self.bn1(x)

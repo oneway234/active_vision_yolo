@@ -33,10 +33,11 @@ def run_acd():
             # RL choose action based on observation
             # read curr image
             inimg = os.path.join(train_set, 'jpg_rgb', img)
-            curr_s = extract_feature.extract_img_feature(inimg)
-            curr_s = curr_s.reshape(1, 8112*39)
+            curr_s = np.array(extract_feature.extract_img_feature(inimg))
+            curr_s = curr_s.reshape(1, 8112*85)
             curr_s = dqn.decrease_net(curr_s)
             curr_s = torch.cat([curr_s, curr_bbox], 1) #combine feature and bbox
+
             # choose action
             if dqn.memory_counter <= RAMDOM_EXPLORE_TIMES:
                 action = random.randint(0, 6)
@@ -48,6 +49,7 @@ def run_acd():
             # if type(action) is np.ndarray:
             #     action = action[0]
 
+
             # RL take action and get next observation and reward
             reward, next_img, next_diff, next_bbox = env.step(train_set, img, thing_label, diff, action, curr_bbox)
             if type(next_bbox) is not torch.Tensor:
@@ -57,8 +59,8 @@ def run_acd():
 
             # read next image
             inextimg = os.path.join(train_set, 'jpg_rgb', next_img)  # read next img
-            next_s = extract_feature.extract_img_feature(inextimg)
-            next_s = next_s.reshape(1, 8112 * 39)
+            next_s = np.array(extract_feature.extract_img_feature(inextimg))
+            next_s = next_s.reshape(1, 8112 * 85)
             next_s = dqn.decrease_net(next_s)
             next_s = torch.cat([next_s, next_bbox], 1)
 
@@ -116,5 +118,5 @@ def stopping_criterion(next_diff, steps):
 if __name__ == '__main__':
     env = Active_vision_env()
     cuda_gpu = torch.cuda.is_available()
-    if (cuda_gpu):
-        run_acd()
+
+    run_acd()

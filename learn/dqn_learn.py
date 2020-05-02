@@ -6,14 +6,14 @@ import  numpy as np
 import agents.img_cnn as fnet
 
 # Hyper Parameters
-BATCH_SIZE = 8
+BATCH_SIZE = 1
 LR = 0.01                   # learning rate
 EPSILON = 0.9               # greedy policy
 GAMMA = 0.9                 # reward discount
 TARGET_REPLACE_ITER = 100   # target update frequency
-MEMORY_CAPACITY = 30
+MEMORY_CAPACITY = 500000
 N_ACTIONS = 7
-N_STATES = 516
+N_STATES = 5
 
 class DQN(object):
     def __init__(self):
@@ -29,7 +29,6 @@ class DQN(object):
         # input only one sample
         if np.random.uniform() < EPSILON:   # greedy
             actions_value = self.eval_net.forward(x)
-            print("actions_value:", actions_value)
             action = torch.max(actions_value, 1)[1].data.numpy()
         else:   # random
             action = np.random.randint(0, N_ACTIONS-1)
@@ -75,7 +74,6 @@ class DQN(object):
         q_next = self.target_net(b_s_).detach()     # detach from graph, don't backpropagate
         q_target = b_r + GAMMA * q_next.max(1)[0].view(BATCH_SIZE, 1)   # shape (batch, 1)
         loss = self.loss_func(q_eval, q_target)
-        print("b_s:", b_s, "\nb_s_:", b_s_, "\nloss:", loss)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
